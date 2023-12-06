@@ -2,6 +2,8 @@
 
 중계 서버를 구축하는 과정은 다음과 같습니다:
 
+<img width="560" alt="스크린샷 2023-12-06 10 32 44" src="https://github.com/rapidglobal-seokhyeon/backend-test/assets/127168148/67f55578-b779-486c-8414-36747c8dd8c2">
+
 1. **클라이언트 요청 수신**
    - 클라이언트는 중계 서버에 요청을 보냅니다.
    
