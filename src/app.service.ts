@@ -14,6 +14,11 @@ export class AppService {
    * 상품을 수집할 때 제공된 키워드를 기반으로 카테고리 목록과 매칭하여 상품에 카테고리 정보를 연결하는 프로세스를 구현합니다.
    */
   challenge1(): number {
+    type Product = {
+      id: number;
+      name: string;
+      keyword: string;
+    };
     //함수 실행 시간 반환
     const categoryList = [
       { id: 1, name: '가구' },
@@ -25,14 +30,25 @@ export class AppService {
     });
     const start = Date.now();
 
-    const keyword = '카테고리 5999';
-    const category = categoryList.find((e) => e.name === '');
-
     const product = {
       id: 1,
       name: '의자',
       keyword: '가구',
     };
+
+    const findCategoryByKeyword = ({ id, name, keyword }: Product) => {
+      const category = categoryList.find((e) => e.name === keyword);
+      const product = {
+        id,
+        name,
+        category: category ? { id: category.id, name: category.name } : null,
+      };
+      return product;
+    };
+
+    const matchedProduct = findCategoryByKeyword(product);
+
+    console.log(matchedProduct);
 
     const end = Date.now();
     return end - start;
