@@ -23,8 +23,10 @@ export class AppService {
     [...new Array(10000)].forEach((_, index) => {
       categoryList.push({ id: index + 4, name: `카테고리${index + 4}` });
     });
-
     const start = Date.now();
+
+    const keyword = '카테고리 5999';
+    const category = categoryList.find((e) => e.name === '');
 
     const product = {
       id: 1,
@@ -62,8 +64,27 @@ export class AppService {
     [...new Array(50)].forEach((_, index) => {
       optionList.push({ id: index + 7, name: `블랙${index + 7}` });
     });
-
     const start = Date.now();
+
+    const ruleMap = new Map<string, string>();
+    translateWordList.forEach(({ src, dest }) => ruleMap.set(src, dest));
+
+    const updatedOptionList = optionList.map(({ id, name }) => {
+      const [color, size] = name.split(' ');
+
+      const foundRule = ruleMap.get(color);
+      name = foundRule ? name.replace(color, foundRule) : name;
+
+      // size가 없을 때
+      if (size === undefined) {
+        const index = String(id);
+        const foundSecondRule = ruleMap.get(index);
+        name = foundSecondRule ? name.replace(index, foundSecondRule) : name;
+      }
+
+      return { id, name };
+    });
+    console.log(updatedOptionList);
 
     const end = Date.now();
     return end - start;
