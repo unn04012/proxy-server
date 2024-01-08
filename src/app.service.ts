@@ -1,9 +1,20 @@
 import { Injectable } from '@nestjs/common';
+import { ApiThrolttlerManager } from './rate-limit/api-throttler.manager';
+import { OriginServerRequester } from './request-server/origin-server-requester.interface';
 
 @Injectable()
 export class AppService {
-  proxy() {
+  constructor(
+    private readonly _apiThrottlerManager: ApiThrolttlerManager,
+    private readonly _originServerRequester: OriginServerRequester,
+  ) {}
+
+  async proxy(userId: string) {
     //API 호출
+    this._apiThrottlerManager.setToken(userId);
+
+    await this._originServerRequester.request('data');
+
     return true;
   }
 
