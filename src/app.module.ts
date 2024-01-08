@@ -1,7 +1,8 @@
 import { CacheModule } from '@nestjs/cache-manager';
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { UserAuthorizeMiddleware } from './middlewares/user-authorize-middleware';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { OriginServerRequester } from './request-server/origin-server-requester.interface';
 
@@ -10,4 +11,8 @@ import { OriginServerRequester } from './request-server/origin-server-requester.
   controllers: [AppController],
   providers: [AppService, OriginServerRequester],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(UserAuthorizeMiddleware).exclude('challenge(.*)').forRoutes(AppController);
+  }
+}
