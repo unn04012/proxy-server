@@ -11,7 +11,7 @@ export class AppService {
 
   async proxy(userId: string) {
     //API 호출
-    this._apiThrottlerManager.setToken(userId);
+    await this._apiThrottlerManager.setToken(userId);
 
     await this._originServerRequester.request('data');
 

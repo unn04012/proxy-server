@@ -1,19 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { Symbols } from 'src/symbols';
-import { setTimeout } from 'timers/promises';
+import { Injectable } from '@nestjs/common';
 import { RateLimitTokenBucket } from './rate-limit-token-bucket';
-import { IUserRequestHistoryRepository, UserRequest } from './repository/user-request-history-repository.interface';
 
 @Injectable()
 export class ApiThrolttlerManager {
-  constructor(
-    private readonly _apiThrottler: RateLimitTokenBucket,
-    @Inject(Symbols.UserRequestHistory) private readonly _userRequestHistoryRepository: IUserRequestHistoryRepository,
-    //TODO inject config module like ttl
-  ) {}
+  constructor(private readonly _apiThrottler: RateLimitTokenBucket) {}
 
-  public setToken(userId: string) {
+  public async setToken(userId: string) {
     const timestamp = Date.now();
-    this._apiThrottler.checkToken(userId, timestamp);
+    await this._apiThrottler.getToken(userId, timestamp);
   }
 }
