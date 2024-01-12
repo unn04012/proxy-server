@@ -3,11 +3,9 @@ import { TokenBucket, TokenBucketStorer } from './token-bucket-storer';
 
 @Injectable()
 export class RateLimitTokenBucket {
-  constructor(
-    private readonly _bucketSize: number,
-    private readonly _refillRatePerSecond: number,
-    private readonly _bucketStorer: TokenBucketStorer,
-  ) {}
+  private readonly _bucketSize: number = 10;
+  private readonly _refillRatePerSecond: number = 10;
+  constructor(private readonly _bucketStorer: TokenBucketStorer) {}
 
   public async getToken(userId: string, currentTimestamp: number) {
     let bucket = this._bucketStorer.getBucket(userId);
@@ -30,7 +28,7 @@ export class RateLimitTokenBucket {
   private async _refillBucket(bucket: TokenBucket, numTokens: number): Promise<void> {
     while (bucket.tokens < numTokens) {
       const waitForTokens = Math.max((numTokens - bucket.tokens) / bucket.refillRate, 0);
-
+      console.log('hello');
       await this._delay(waitForTokens * 1000);
       const currentTimestamp = Date.now();
 

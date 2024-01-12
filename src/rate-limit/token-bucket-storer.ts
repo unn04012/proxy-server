@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { TokenBucketEntity } from './token-bucket.entity';
 
 export type TokenBucket = {
   tokens: number;
@@ -15,8 +16,14 @@ export class TokenBucketStorer {
     this._bucket = new Map();
   }
 
+  public hasBucket(userId: string) {
+    return this._bucket.has(userId);
+  }
+
   public getBucket(userId: string) {
-    return this._bucket.get(userId);
+    const bucket = this._bucket.get(userId);
+    return bucket;
+    // return bucket ? TokenBucketEntity.from(bucket) : null;
   }
 
   public setBucket(userId: string, bucket: TokenBucket) {

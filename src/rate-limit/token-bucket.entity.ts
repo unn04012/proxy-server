@@ -1,6 +1,9 @@
 import { TokenBucket } from './token-bucket-storer';
 
 export class TokenBucketEntity {
+  private _totalRequestCount = 0;
+  private _totalRequestTime = 0;
+
   private constructor(
     private _tokens: number,
     private _lastRefillTimestamp: number,
@@ -21,15 +24,17 @@ export class TokenBucketEntity {
    * 마지막 갱신시점 기준으로 추가할 토큰을 계산후 갱신합니다.
    * @returns
    */
-  public calculateAddedTokens(currentTimestamp: number) {
-    const addedTokens = Math.min(this._maxTokens, Math.floor(((currentTimestamp - this._lastRefillTimestamp) * this._refillRate) / 1000));
-    // console.log(addedTokens);
-    // if (addedTokens > 0) {
-    //   this._tokens += addedTokens;
-    //   this._lastRefillTimestamp = currentTimestamp;
-    // }
+  public calculateAddedTokens(currentTimestamp: number, requestCount: number) {
+    // if (requestCount > this._refillRate) return 0;
+    const elapsedTime = currentTimestamp - this._lastRefillTimestamp;
 
-    return addedTokens;
+    const averageAddedToken = this._refillRate * (elapsedTime / 1000); // 평균 공급받을 토큰
+
+    const tokensToAdd = Math.min(this._maxTokens, Math.floor(averageAddedToken));
+
+    if (tokensToAdd + requestCount > this._refillRate) return 0;
+
+    return tokensToAdd;
   }
 
   /**
@@ -41,19 +46,29 @@ export class TokenBucketEntity {
   }
 
   /**
-   * 토큰을 공급받기 위한 딜레이 시간을 계삽합니다.
+   * 1개의 토큰을 공급받기 위한 최대 딜레이 시간을 계산합니다.
+   * @param counter 현재 초당 처리율
+   * @return 지연 시간
    */
-  public calculateDelayTimeForTokens(requestToken: number) {
-    const calculatedSeconds = Math.max((requestToken - this._tokens) / this._refillRate, 0);
+  public calculateDelayTimeForTokens(counter: number) {
+    const ONE_SECOND = 1;
+
+    if (counter >= this._refillRate) return ONE_SECOND;
+
+    const calculatedSeconds = Math.max((1 - this._tokens) / this._refillRate, 0);
 
     return calculatedSeconds;
   }
 
-  public useToken(numToken: number) {
-    const updatedToken = this._tokens - numToken;
+  /**
+   * 1개의 토큰을 사용하고 현재 처리율을 계산합니다.
+   * @param currentTimestamp nuumber
+   */
+  public useToken(currentTimestamp: number) {
+    const updatedToken = this._tokens - 1;
     if (updatedToken < 0) throw new Error('cannot use more than token in the bucket');
-
-    this._tokens -= numToken;
+    this._totalRequestCount += 1;
+    this._tokens -= 1;
   }
 
   public forUpdate(): TokenBucket {
