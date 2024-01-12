@@ -6,10 +6,14 @@ export type TokenBucket = {
   lastRefillTimestamp: number;
   maxTokens: number;
   refillRate: number;
+  totalRequestCount: number;
+  totalAccTime: number;
 };
 
 @Injectable()
 export class TokenBucketStorer {
+  private readonly _bucketSize = 10;
+  private readonly _refillRatePerSecond = 10;
   private readonly _bucket: Map<string, TokenBucket>;
 
   constructor() {
@@ -22,11 +26,27 @@ export class TokenBucketStorer {
 
   public getBucket(userId: string) {
     const bucket = this._bucket.get(userId);
-    return bucket;
-    // return bucket ? TokenBucketEntity.from(bucket) : null;
+    // return bucket;
+    return bucket ? TokenBucketEntity.from(bucket) : null;
   }
 
-  public setBucket(userId: string, bucket: TokenBucket) {
-    this._bucket.set(userId, bucket);
+  public setBucket(userId: string, currentTimestamp: number) {
+    const updateBucket: TokenBucket = {
+      tokens: 0,
+      lastRefillTimestamp: currentTimestamp,
+      maxTokens: this._bucketSize,
+      refillRate: this._refillRatePerSecond,
+      totalRequestCount: 0,
+    };
+    this._bucket.set(userId, updateBucket);
+  }
+
+  public updateBucket(userId: string, bucket: TokenBucketEntity) {
+    this._bucket.set(userId, bucket.forUpdate());
+  }
+
+  public all() {
+    console.log(this._bucket);
+    return this._bucket;
   }
 }

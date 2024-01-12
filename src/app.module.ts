@@ -13,6 +13,6 @@ import { OriginServerRequester } from './request-server/origin-server-requester.
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(UserAuthorizeMiddleware).exclude('challenge(.*)').forRoutes(AppController);
+    consumer.apply(UserAuthorizeMiddleware).exclude('challenge(.*)').exclude('all').forRoutes(AppController);
   }
 }

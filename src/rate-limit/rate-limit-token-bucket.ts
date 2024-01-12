@@ -1,47 +1,68 @@
-import { Injectable } from '@nestjs/common';
-import { TokenBucket, TokenBucketStorer } from './token-bucket-storer';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Cache } from 'cache-manager';
+import { setTimeout } from 'timers/promises';
+import { TokenBucketStorer } from './token-bucket-storer';
+import { TokenBucketEntity } from './token-bucket.entity';
+
+const REQEUST_NUM_TOKEN = 1;
+const ONE_SECOND = 1000; // 1 seconds
+
+export type UserRequest = {
+  count: number;
+  lastRequestTime: number;
+};
 
 @Injectable()
 export class RateLimitTokenBucket {
-  private readonly _bucketSize: number = 10;
-  private readonly _refillRatePerSecond: number = 10;
-  constructor(private readonly _bucketStorer: TokenBucketStorer) {}
+  private readonly _logger = new Logger(RateLimitTokenBucket.name);
+
+  constructor(
+    private readonly _bucketStorer: TokenBucketStorer,
+    @Inject(CACHE_MANAGER) private readonly _cacheManager: Cache,
+  ) {}
+
+  private async _getRequestCounter(userId: string): Promise<UserRequest> {
+    const userCounter = await this._cacheManager.get<UserRequest>(userId);
+    if (!userCounter) await this._cacheManager.set(userId, REQEUST_NUM_TOKEN, ONE_SECOND);
+
+    return userCounter ?? { lastRequestTime: 0, count: 0 };
+  }
 
   public async getToken(userId: string, currentTimestamp: number) {
-    let bucket = this._bucketStorer.getBucket(userId);
-    if (!bucket) {
-      bucket = {
-        tokens: this._bucketSize,
-        lastRefillTimestamp: currentTimestamp,
-        maxTokens: this._bucketSize,
-        refillRate: this._refillRatePerSecond,
-      };
-      this._bucketStorer.setBucket(userId, bucket);
+    const { count, lastRequestTime } = await this._getRequestCounter(userId);
+
+    if (!this._bucketStorer.hasBucket(userId)) {
+      this._bucketStorer.setBucket(userId, currentTimestamp);
     }
+    const bucket = <TokenBucketEntity>this._bucketStorer.getBucket(userId);
 
-    await this._refillBucket(bucket, 1);
+    await this._refillBucket(bucket, 1, userId);
 
-    bucket.tokens -= 1;
-    this._bucketStorer.setBucket(userId, bucket);
+    bucket.useToken(cu);
+
+    this._bucketStorer.updateBucket(userId, bucket);
+
+    await this._cacheManager.set(userId, requestCount + 1);
   }
 
-  private async _refillBucket(bucket: TokenBucket, numTokens: number): Promise<void> {
+  private async _refillBucket(bucket: TokenBucketEntity, numTokens: number, userId: string): Promise<void> {
     while (bucket.tokens < numTokens) {
-      const waitForTokens = Math.max((numTokens - bucket.tokens) / bucket.refillRate, 0);
-      console.log('hello');
-      await this._delay(waitForTokens * 1000);
+      const counter = await this._getRequestCounter(userId);
+      const waitForTokens = bucket.calculateDelayTimeForTokens(counter);
+      console.log(`${userId} delayed for ${waitForTokens} seconds`);
+      if (waitForTokens > 0) {
+        await setTimeout(waitForTokens * 1000);
+      }
+
       const currentTimestamp = Date.now();
 
-      const addedTokens = Math.min(bucket.maxTokens, Math.floor(((currentTimestamp - bucket.lastRefillTimestamp) * bucket.refillRate) / 1000));
+      const addedTokens = bucket.calculateAddedTokens(currentTimestamp, counter);
+      // console.log(userId, waitForTokens, addedTokens);
 
       if (addedTokens > 0) {
-        bucket.tokens += addedTokens;
-        bucket.lastRefillTimestamp = currentTimestamp;
+        bucket.refillToken(addedTokens, currentTimestamp);
       }
     }
-  }
-
-  private async _delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

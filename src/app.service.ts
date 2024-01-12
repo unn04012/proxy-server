@@ -9,11 +9,17 @@ export class AppService {
     private readonly _originServerRequester: OriginServerRequester,
   ) {}
 
+  async all(userId: string) {
+    //API 호출
+
+    return this._apiThrottlerManager.all();
+  }
+
   async proxy(userId: string) {
     //API 호출
     await this._apiThrottlerManager.setToken(userId);
 
-    await this._originServerRequester.request('data');
+    await this._originServerRequester.request(userId);
 
     return true;
   }
