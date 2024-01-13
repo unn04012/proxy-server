@@ -6,12 +6,11 @@ export class TokenBucketEntity {
     private _lastRefillTimestamp: number,
     private _maxTokens: number,
     private _refillRate: number,
-    private _totalRequestCount: number,
   ) {}
 
   static from(param: TokenBucket) {
-    const { tokens, lastRefillTimestamp, maxTokens, refillRate, totalRequestCount } = param;
-    return new TokenBucketEntity(tokens, lastRefillTimestamp, maxTokens, refillRate, totalRequestCount);
+    const { tokens, lastRefillTimestamp, maxTokens, refillRate } = param;
+    return new TokenBucketEntity(tokens, lastRefillTimestamp, maxTokens, refillRate);
   }
 
   get tokens() {
@@ -19,20 +18,17 @@ export class TokenBucketEntity {
   }
 
   /**
-   * 마지막 갱신시점 기준으로 추가할 토큰을 계산후 갱신합니다.
+   * 마지막 갱신시점 기준으로 추가할 토큰을 계산합니다.
+   * @param counter 1초 안에 발생한 요청 수
    * @returns
    */
-  public calculateAddedTokens(currentTimestamp: number, requestCount: number) {
-    // if (requestCount > this._refillRate) return 0;
+  public calculateAddedTokens(currentTimestamp: number, counter: number) {
+    if (counter >= this._refillRate) return 0;
     const elapsedTime = currentTimestamp - this._lastRefillTimestamp;
 
     const averageAddedToken = this._refillRate * (elapsedTime / 1000); // 평균 공급받을 토큰
 
-    // const token = requestCount / (elapsedTime / 1000);
-
     const tokensToAdd = Math.min(this._maxTokens, Math.floor(averageAddedToken));
-    // console.log(elapsedTime, averageAddedToken, requestCount, tokensToAdd);
-    // if (tokensToAdd + requestCount > this._refillRate) return 0;
 
     return tokensToAdd;
   }
@@ -61,14 +57,13 @@ export class TokenBucketEntity {
   }
 
   /**
-   * 1개의 토큰을 사용하고 현재 처리율을 계산합니다.
+   * 1개의 토큰을 사용합니다.
    * @param currentTimestamp number
    */
-  public useToken(currentTimestamp: number, lastRequestTimestamp: number) {
+  public useToken() {
     const updatedToken = this._tokens - 1;
     if (updatedToken < 0) throw new Error('cannot use more than token in the bucket');
-    this._totalRequestCount += 1;
-    this._;
+
     this._tokens -= 1;
   }
 
@@ -78,7 +73,6 @@ export class TokenBucketEntity {
       maxTokens: this._maxTokens,
       lastRefillTimestamp: this._lastRefillTimestamp,
       refillRate: this._refillRate,
-      totalRequestCount: this._totalRequestCount,
     };
   }
 }

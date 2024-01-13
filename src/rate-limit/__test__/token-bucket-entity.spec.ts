@@ -42,24 +42,13 @@ describe('토큰 공급률이 초당 10개면서 최대 버킷 크기가 10인�
     expect(addedToken).toBe(2);
   });
 
-  test('현재 초당 처리율이 10이며 요청이 올 경우 토큰이 생기면 안된다..', () => {
+  test('현재 초당 처리율이 10이상 요청이 올 경우 토큰이 생기면 안된다.', () => {
     const current = new Date();
     const lastRefillTime = current.setMilliseconds(100);
     const currentTime = current.setMilliseconds(300);
     const tokenBucket = mockToeknBucketEntity({ lastRefillTimestamp: lastRefillTime, tokens: 5 });
 
     const addedToken = tokenBucket.calculateAddedTokens(currentTime, 10);
-
-    expect(addedToken).toBe(0);
-  });
-
-  test('현재 초당 처리율이 11이면 요청이 올 경우 토큰이 생기면 안된다..', () => {
-    const current = new Date();
-    const lastRefillTime = current.setMilliseconds(100);
-    const currentTime = current.setMilliseconds(300);
-    const tokenBucket = mockToeknBucketEntity({ lastRefillTimestamp: lastRefillTime });
-
-    const addedToken = tokenBucket.calculateAddedTokens(currentTime, 11);
 
     expect(addedToken).toBe(0);
   });

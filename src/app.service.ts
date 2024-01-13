@@ -1,23 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { ApiThrolttlerManager } from './rate-limit/api-throttler.manager';
+import { RateLimitTokenBucket } from './rate-limit/rate-limit-token-bucket';
 import { OriginServerRequester } from './request-server/origin-server-requester.interface';
 
 @Injectable()
 export class AppService {
   constructor(
-    private readonly _apiThrottlerManager: ApiThrolttlerManager,
+    private readonly _ratelimitTokenBucket: RateLimitTokenBucket,
     private readonly _originServerRequester: OriginServerRequester,
   ) {}
 
-  async all(userId: string) {
-    //API 호출
-
-    return this._apiThrottlerManager.all();
-  }
-
   async proxy(userId: string) {
     //API 호출
-    await this._apiThrottlerManager.setToken(userId);
+    const currentTimestamp = Date.now();
+
+    await this._ratelimitTokenBucket.checkRequest(userId, currentTimestamp);
 
     await this._originServerRequester.request(userId);
 

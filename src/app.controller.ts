@@ -21,9 +21,4 @@ export class AppController {
   challenge2(): number {
     return this.appService.challenge2();
   }
-
-  @Get('all')
-  all(@Req() request: Request) {
-    return this.appService.all(request.userId);
-  }
 }
